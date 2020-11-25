@@ -1,6 +1,7 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import styles from '../styles/Artist.module.css';
+import { getArtistByUrl, getAllArtists } from '../lib/api';
 
 export default function Artist({
   content: { title, biography, image, imageCredits }
@@ -70,19 +71,26 @@ export default function Artist({
   );
 }
 
-export async function getStaticProps() {
+export async function getStaticProps({ params }) {
+  const content = await getArtistByUrl(urlArrayToString(params.slug));
   return {
-    props: {
-      content: {
-        title: 'Ramones',
-        biography:
-          'The Ramones were an American punk rock band that formed in the New York City neighborhood of Forest Hills, Queens in 1974. They are often cited as the first true punk rock group.[1][2] Despite achieving only limited commercial success initially, the band was highly influential in the United States, Brazil and most of South America, as well as Europe, including the United Kingdom, the Netherlands, Germany, Sweden and Belgium. All of the band members adopted pseudonyms ending with the surname "Ramone", although none of them were biologically related; they were inspired by Paul McCartney of the Beatles, who would check into hotels as "Paul Ramon".',
-        image: {
-          _url:
-            'https://media.gq-magazine.co.uk/photos/5f35064effe32218efca4f9a/16:9/w_2880%2cc_limit/20200813-ramones-08.jpg'
-        },
-        imageCredits: '© Ian Dickson/Shutterstock. All Rights Reserved.'
-      }
-    }
+    props: { content }
   };
 }
+
+export async function getStaticPaths() {
+  const artists = await getAllArtists();
+  const paths = artists.map(({ url }) => ({
+    params: {
+      slug: urlStringToArray(url)
+    }
+  }));
+
+  return {
+    paths,
+    fallback: false
+  };
+}
+
+const urlArrayToString = (url) => `/${url.join('/')}/`;
+const urlStringToArray = (url) => url.split('/').filter((urlPart) => urlPart);
